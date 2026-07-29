@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: pickle-match-kanto
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: python outputs/pickle_match_tokyo/picklematch_tokyo_app.py
+    healthCheckPath: /healthz
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PICKLEMATCH_SITE_NAME
+        value: Pickle Match Kanto
+      - key: PICKLEMATCH_OPERATOR
+        value: Pickle Match Kanto 運営事務局
+      - key: PICKLEMATCH_CONTACT_EMAIL
+        sync: false
+      - key: PICKLEMATCH_DB_PATH
+        value: /var/data/picklematch_kanto.sqlite
+      - key: PICKLEMATCH_SITE_BASE_URL
+        sync: false
+    disk:
+      name: pickle-match-kanto-data
+      mountPath: /var/data
+      sizeGB: 1
