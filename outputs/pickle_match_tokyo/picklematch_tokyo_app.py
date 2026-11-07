@@ -16,6 +16,7 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
+from picklematch_support import contact_panel
 
 
 ROOT = Path(__file__).resolve().parent
@@ -23,6 +24,7 @@ DB_PATH = Path(os.environ.get("PICKLEMATCH_DB_PATH", str(ROOT / "picklematch_kan
 HOST = os.environ.get("HOST", "127.0.0.1")
 PORT = int(os.environ.get("PORT", "8791"))
 SITE_NAME = os.environ.get("PICKLEMATCH_SITE_NAME", "Pickle Match Kanto")
+CONTACT_EMAIL = os.environ.get("PICKLEMATCH_CONTACT_EMAIL", "sapia.business@gmail.com").strip()
 SITE_OPERATOR = os.environ.get("PICKLEMATCH_OPERATOR", "Pickle Match Kanto 運営事務局")
 SITE_BASE_URL = os.environ.get("PICKLEMATCH_SITE_BASE_URL", "http://%s:%s" % (HOST, PORT)).rstrip("/")
 TODAY = "2026-07-29"
@@ -906,7 +908,7 @@ def footer() -> str:
         '<p>練習相手も、仲間も、ここで見つかる。</p><p>関東1都6県のピックルボール団体・練習会・プレイヤーをつなぐ検索と募集の場です。</p></div>'
         '<div class="footer-links">'
         '<a href="/recruitments">募集掲示板</a><a href="/organizations">団体DB</a><a href="/representative">団体代表者登録</a><a href="/post-recruitment">募集投稿</a>'
-        '<a href="/operator">運営者情報</a><a href="/privacy">プライバシーポリシー</a><a href="/terms">利用規約</a><a href="/about-data">掲載情報・訂正削除方針</a><a href="/contact">問い合わせ</a>'
+        '<a href="/operator">運営者情報</a><a href="/privacy">プライバシーポリシー</a><a href="/terms">利用規約</a><a href="/about-data">掲載情報・訂正削除方針</a><a href="/contact">お問い合わせ</a>'
         '</div></div></footer>'
     )
 
@@ -1277,9 +1279,11 @@ def about_data_page() -> str:
 
 
 def contact_page() -> str:
+    email_panel, email_script = contact_panel(SITE_NAME, CONTACT_EMAIL)
     body = """
     <main><section class="page-hero"><div class="shell"><div class="crumb">Pickle Match Tokyo / 問い合わせ</div><h1>問い合わせ</h1><p>掲載申請、訂正・削除依頼、なりすまし・虚偽申請の通報、一般的な問い合わせを受け付けます。</p></div></section>
-    <div class="shell form-layout"><form id="contactForm"><div class="form-grid">
+    """ + email_panel + """
+    <div class="shell form-layout"><h2>サイト内の受付窓口</h2><p>内容は運営者の受付一覧に保存されます。メールは送信されません。メールでの連絡をご希望の場合は上の窓口をご利用ください。</p><form id="contactForm"><div class="form-grid">
       <div class="field"><label>お名前</label><input name="name"></div><div class="field"><label>メールアドレス *</label><input type="email" name="email" required></div>
       <div class="field span-2"><label>お問い合わせ種別 *</label><select name="category" required><option value="">選択してください</option><option>掲載情報の訂正</option><option>掲載情報の削除依頼</option><option>なりすまし・虚偽申請の通報</option><option>団体代表者登録</option><option>その他</option></select></div>
       <div class="field span-2"><label>内容 *</label><textarea name="message" required placeholder="対象団体名、該当URL、訂正内容などを記載してください。"></textarea></div>
@@ -1288,10 +1292,10 @@ def contact_page() -> str:
     script = r"""
     <script>
     async function post(path,data){var r=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});var j=await r.json();if(!r.ok)throw new Error(j.error||"送信に失敗しました");return j}
-    document.getElementById("contactForm").onsubmit=async function(x){x.preventDefault();var out=document.getElementById("contactResult");out.style.display="block";out.textContent="送信しています。";try{var j=await post("/api/contact",Object.fromEntries(new FormData(x.target).entries()));out.className="form-result";out.textContent="お問い合わせを受け付けました。受付番号: "+j.contact_id;x.target.reset()}catch(err){out.className="form-result error";out.textContent=err.message}}
+    document.getElementById("contactForm").onsubmit=async function(x){x.preventDefault();var out=document.getElementById("contactResult");out.style.display="block";out.textContent="受付へ保存しています。";try{var j=await post("/api/contact",Object.fromEntries(new FormData(x.target).entries()));out.className="form-result";out.textContent="サイト内で受け付けました。受付番号: "+j.contact_id;x.target.reset()}catch(err){out.className="form-result error";out.textContent=err.message}}
     </script>
     """
-    return base_page("問い合わせ", "", body, script)
+    return base_page("問い合わせ", "", body, script + email_script)
 
 
 def robots_txt() -> str:
